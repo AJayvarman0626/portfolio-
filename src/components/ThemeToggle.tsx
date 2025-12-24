@@ -8,10 +8,7 @@ export default function ThemeToggle() {
   const { theme, setTheme } = useTheme();
   const [mounted, setMounted] = useState(false);
 
-  useEffect(() => {
-    setMounted(true);
-  }, []);
-
+  useEffect(() => setMounted(true), []);
   if (!mounted) return null;
 
   const isDark = theme === "dark";
@@ -21,20 +18,22 @@ export default function ThemeToggle() {
       aria-label="Toggle theme"
       onClick={() => setTheme(isDark ? "light" : "dark")}
       className="
-        fixed bottom-5 right-5 z-50
+        fixed z-50
         h-12 w-12
         rounded-full
         flex items-center justify-center
 
         transition-all duration-300
 
-        /* Light mode */
+        /* position with safe-area */
+        right-4
+        bottom-[calc(1rem+env(safe-area-inset-bottom))]
+
         bg-white
         border border-black/15
         text-black
         shadow-[0_10px_25px_rgba(0,0,0,0.15)]
 
-        /* Dark mode */
         dark:bg-black/80
         dark:border-white/25
         dark:text-white
