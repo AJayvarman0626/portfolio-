@@ -4,7 +4,6 @@ import Skills from "../components/Skills";
 import Projects from "../components/Projects";
 import Footer from "../components/Footer";
 import TicTacToe from "../components/TicTacToe"
-import ThemeToggle from "../components/ThemeToggle";
 
 export default function Home() {
   return (
@@ -15,7 +14,6 @@ export default function Home() {
       <Projects />
       <TicTacToe />
       <Footer />
-      <ThemeToggle />
     </main>
   );
 }

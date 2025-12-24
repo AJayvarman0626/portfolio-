@@ -13,11 +13,12 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en" suppressHydrationWarning>
-      <body className="bg-white dark:bg-black transition-colors">
-        <ThemeProvider>
-          {children}
-        </ThemeProvider>
-      </body>
+      <body className="bg-black text-white">
+  <ThemeProvider>
+    {children}
+  </ThemeProvider>
+</body>
+
     </html>
   );
 }
