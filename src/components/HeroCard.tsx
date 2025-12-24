@@ -52,7 +52,11 @@ export default function HeroCard() {
   }
 
   return (
-    <section className="flex min-h-screen items-center justify-center px-4">
+    <section
+  className="flex items-center justify-center px-4 py-10"
+  style={{ minHeight: "100dvh" }}
+>
+
       <motion.div
         onMouseMove={handleMouseMove}
         onMouseLeave={handleMouseLeave}
