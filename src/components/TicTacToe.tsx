@@ -1,241 +1,220 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
-import { motion, useMotionValue, useSpring, useTransform } from "framer-motion";
+import { useEffect, useRef, useState } from "react";
+import { X, Circle, Minus } from "lucide-react";
 
-type Cell = "X" | "O" | null;
+type Player = "X" | "O" | null;
+type Result = "X" | "O" | "draw" | null;
 
 export default function TicTacToe() {
-  const [board, setBoard] = useState<Cell[]>(Array(9).fill(null));
-  const [isPlayerTurn, setIsPlayerTurn] = useState(true);
-  const [gameOver, setGameOver] = useState(false);
-  const [winningLine, setWinningLine] = useState<number[]>([]);
+  const [board, setBoard] = useState<Player[]>(Array(9).fill(null));
+  const [turn, setTurn] = useState<Player>("X");
+  const [result, setResult] = useState<Result>(null);
 
-  // 🏆 Scoreboard
-  const [score, setScore] = useState({ X: 0, O: 0, draw: 0 });
+  const [score, setScore] = useState({
+    you: 0,
+    ai: 0,
+    draw: 0,
+  });
 
-  // 🔊 Sounds (browser-safe)
-  const clickSoundRef = useRef<HTMLAudioElement | null>(null);
-  const winSoundRef = useRef<HTMLAudioElement | null>(null);
+  const clickSound = useRef<HTMLAudioElement | null>(null);
+  const winSound = useRef<HTMLAudioElement | null>(null);
 
+  /* Load sounds */
   useEffect(() => {
-    clickSoundRef.current = new Audio("/sounds/click.mp3");
-    winSoundRef.current = new Audio("/sounds/win.mp3");
+    clickSound.current = new Audio("/sounds/click.mp3");
+    winSound.current = new Audio("/sounds/win.mp3");
   }, []);
 
-  const result = calculateWinner(board);
-  const winner = result?.winner ?? null;
-
-  /* ===== Check game state ===== */
+  /* Check result */
   useEffect(() => {
-    if (result) {
-      setWinningLine(result.line);
-      setGameOver(true);
+    const winner = checkWinner(board);
 
-      winSoundRef.current?.play();
-      confettiBurst();
+    if (winner) {
+      setResult(winner);
+      if (winner === "X") {
+        setScore((s) => ({ ...s, you: s.you + 1 }));
+        winSound.current?.play();
+      } else {
+        setScore((s) => ({ ...s, ai: s.ai + 1 }));
+      }
+      return;
+    }
 
-      setScore((s) => ({
-        ...s,
-        [result.winner]: s[result.winner] + 1,
-      }));
-    } else if (board.every(Boolean)) {
-      setGameOver(true);
+    if (board.every(Boolean)) {
+      setResult("draw");
       setScore((s) => ({ ...s, draw: s.draw + 1 }));
     }
   }, [board]);
 
-  /* ===== AI Move ===== */
+  /* AI Turn – TRUE MEDIUM (reduced hardness) */
   useEffect(() => {
-    if (!isPlayerTurn && !winner && board.some((c) => c === null)) {
-      const t = setTimeout(makeComputerMove, 500);
-      return () => clearTimeout(t);
+    if (turn === "O" && result === null) {
+      const move = getMediumMove(board);
+      setTimeout(() => {
+        const next = [...board];
+        next[move] = "O";
+        setBoard(next);
+        setTurn("X");
+      }, 500);
     }
-  }, [isPlayerTurn, board, winner]);
+  }, [turn, result]);
 
   function handleClick(i: number) {
-    if (board[i] || winner || !isPlayerTurn) return;
-
-    clickSoundRef.current?.play();
+    if (board[i] || turn !== "X" || result) return;
+    clickSound.current?.play();
 
     const next = [...board];
     next[i] = "X";
     setBoard(next);
-    setIsPlayerTurn(false);
-  }
-
-  function makeComputerMove() {
-    const move = getBestMove(board);
-    if (move !== null) {
-      const next = [...board];
-      next[move] = "O";
-      setBoard(next);
-      setIsPlayerTurn(true);
-    }
+    setTurn("O");
   }
 
   function resetGame() {
     setBoard(Array(9).fill(null));
-    setIsPlayerTurn(true);
-    setGameOver(false);
-    setWinningLine([]);
+    setTurn("X");
+    setResult(null);
   }
-
-  /* ===== 3D Tilt ===== */
-  const mx = useMotionValue(0);
-  const my = useMotionValue(0);
-
-  const rotateX = useSpring(useTransform(my, [-50, 50], [10, -10]), {
-    stiffness: 120,
-    damping: 14,
-  });
-  const rotateY = useSpring(useTransform(mx, [-50, 50], [-10, 10]), {
-    stiffness: 120,
-    damping: 14,
-  });
-
-  function handleMove(e: React.MouseEvent<HTMLDivElement>) {
-    const r = e.currentTarget.getBoundingClientRect();
-    mx.set(e.clientX - r.left - r.width / 2);
-    my.set(e.clientY - r.top - r.height / 2);
-  }
-
-  function handleLeave() {
-    mx.set(0);
-    my.set(0);
-  }
-
-  function renderSquare(i: number) {
-    const isWin = winningLine.includes(i);
-    return (
-      <motion.button
-        onClick={() => handleClick(i)}
-        whileTap={{ scale: 0.9 }}
-        className={`
-          h-20 w-20 rounded-xl
-          flex items-center justify-center
-          text-3xl font-bold
-          bg-black/5 dark:bg-white/10
-          hover:bg-black/10 dark:hover:bg-white/20
-          transition
-          ${isWin ? "ring-4 ring-green-400 shadow-[0_0_20px_rgba(74,222,128,0.8)]" : ""}
-        `}
-      >
-        {board[i] && (
-          <motion.span
-            className="text-black"
-            initial={{ scale: 0, rotate: -90 }}
-            animate={{ scale: 1, rotate: 0 }}
-            transition={{ type: "spring", stiffness: 200 }}
-          >
-            {board[i]}
-          </motion.span>
-        )}
-      </motion.button>
-    );
-  }
-
-  const resultText = winner
-    ? winner === "X"
-      ? "🎉 You Win!"
-      : "😓 AI Wins"
-    : "🤝 Draw";
 
   return (
-    <section className="mx-auto max-w-md px-4 py-24">
+    <section className="relative mx-auto max-w-md px-4 py-24 text-center bg-black">
       {/* Title */}
-      <div className="mb-4 text-center">
-        <h2 className="inline-block px-5 py-2 text-2xl font-semibold bg-white/80 dark:bg-black/60 text-black dark:text-white backdrop-blur-md rounded-xl">
-          Tic Tac Toe
-        </h2>
-      </div>
+      <h2 className="mb-4 text-xl font-semibold text-white">
+        Tic Tac Toe
+      </h2>
 
       {/* Scoreboard */}
-      <div className="mb-4 flex justify-center gap-6 px-4 py-1 rounded-full text-sm bg-white/80 dark:bg-black/60 backdrop-blur-md text-black dark:text-white border border-black/10 dark:border-white/20">
-        <span>❌ You: {score.X}</span>
-        <span>⭕ AI: {score.O}</span>
-        <span>🤝 Draw: {score.draw}</span>
+      <div className="mb-4 flex justify-center gap-3 text-xs">
+        <Score label="You" value={score.you} icon={X} />
+        <Score label="AI" value={score.ai} icon={Circle} />
+        <Score label="Draw" value={score.draw} icon={Minus} />
       </div>
 
       {/* Board */}
-      <motion.div
-        onMouseMove={handleMove}
-        onMouseLeave={handleLeave}
-        style={{ rotateX, rotateY, perspective: 1000 }}
-        className="relative rounded-3xl p-6 bg-white dark:bg-white/10 backdrop-blur-md border border-black/10 dark:border-white/20"
-      >
-        <div className="grid grid-cols-3 gap-3 justify-center">
-          {Array.from({ length: 9 }).map((_, i) => (
-            <div key={i}>{renderSquare(i)}</div>
-          ))}
-        </div>
+      <div className="mx-auto grid grid-cols-3 gap-3 rounded-2xl p-4 bg-white/10 border border-white/20">
+        {board.map((cell, i) => (
+          <button
+            key={i}
+            onClick={() => handleClick(i)}
+            className="
+              flex h-20 w-20 items-center justify-center
+              rounded-xl
+              bg-white
+              border border-black/10
+              active:scale-95
+            "
+          >
+            {cell === "X" && (
+              <X size={36} strokeWidth={2.4} className="text-black" />
+            )}
+            {cell === "O" && (
+              <Circle size={36} strokeWidth={2.4} className="text-black" />
+            )}
+          </button>
+        ))}
+      </div>
 
-        {/* Overlay */}
-        {gameOver && (
-          <div className="absolute inset-0 z-10 flex items-center justify-center bg-black/50 backdrop-blur-sm rounded-3xl">
-            <div className="rounded-2xl p-6 bg-white dark:bg-black text-black dark:text-white text-center">
-              <h1 className="text-2xl font-semibold">{resultText}</h1>
-              <button
-                onClick={resetGame}
-                className="mt-4 px-4 py-1 rounded-full border border-black/20 dark:border-white/30 hover:bg-black/10 dark:hover:bg-white/15 transition"
-              >
-                Play Again
-              </button>
+      {/* BIG RESULT SCREEN */}
+      {result && (
+        <div className="absolute inset-0 flex items-center justify-center bg-black/90 backdrop-blur-sm">
+          <div className="rounded-2xl bg-white px-10 py-8 text-black shadow-2xl">
+            <div className="mb-3 text-5xl">
+              {result === "X" ? "🎉" : result === "O" ? "🤖" : "🤝"}
             </div>
+            <h3 className="mb-4 text-xl font-semibold">
+              {result === "X"
+                ? "You Win!"
+                : result === "O"
+                ? "AI Wins!"
+                : "Match Draw"}
+            </h3>
+            <button
+              onClick={resetGame}
+              className="rounded-md bg-black px-5 py-2 text-sm text-white"
+            >
+              Play Again
+            </button>
           </div>
-        )}
-      </motion.div>
+        </div>
+      )}
     </section>
   );
 }
 
-/* ===== Helpers ===== */
+/* ---------- UI ---------- */
 
-function calculateWinner(board: Cell[]) {
+function Score({
+  label,
+  value,
+  icon: Icon,
+}: {
+  label: string;
+  value: number;
+  icon: any;
+}) {
+  return (
+    <div className="flex flex-col items-center gap-0.5 rounded-lg px-3 py-2 bg-white/10 border border-white/20 text-white">
+      <Icon size={14} />
+      <span>{label}</span>
+      <span className="font-semibold">{value}</span>
+    </div>
+  );
+}
+
+/* ---------- GAME LOGIC ---------- */
+
+function checkWinner(board: Player[]): Result {
   const lines = [
     [0, 1, 2], [3, 4, 5], [6, 7, 8],
     [0, 3, 6], [1, 4, 7], [2, 5, 8],
     [0, 4, 8], [2, 4, 6],
   ];
+
   for (const [a, b, c] of lines) {
     if (board[a] && board[a] === board[b] && board[a] === board[c]) {
-      return { winner: board[a], line: [a, b, c] };
+      return board[a];
     }
   }
   return null;
 }
 
-function getBestMove(board: Cell[]) {
-  for (let i = 0; i < board.length; i++) {
-    if (!board[i]) {
-      const b = [...board];
-      b[i] = "O";
-      if (calculateWinner(b)?.winner === "O") return i;
-    }
-  }
+/* ---------- MEDIUM AI (RELAXED) ---------- */
+function getMediumMove(board: Player[]): number {
+  const chance = Math.random();
 
-  for (let i = 0; i < board.length; i++) {
-    if (!board[i]) {
-      const b = [...board];
-      b[i] = "X";
-      if (calculateWinner(b)?.winner === "X") return i;
-    }
+  // 60% smart, 40% random
+  if (chance < 0.6) {
+    const win = findBest(board, "O");
+    if (win !== null) return win;
+
+    const block = findBest(board, "X");
+    if (block !== null) return block;
+
+    if (!board[4]) return 4;
   }
 
   const empty = board
     .map((v, i) => (v === null ? i : null))
-    .filter((v): v is number => v !== null);
+    .filter((v) => v !== null) as number[];
 
-  return empty.length
-    ? empty[Math.floor(Math.random() * empty.length)]
-    : null;
+  return empty[Math.floor(Math.random() * empty.length)];
 }
 
-function confettiBurst() {
-  const confetti = document.createElement("div");
-  confetti.innerHTML = "🎉 🎊 ✨ 🎉 🎊 ✨";
-  confetti.className =
-    "fixed inset-0 z-50 flex items-center justify-center text-6xl animate-ping pointer-events-none";
-  document.body.appendChild(confetti);
-  setTimeout(() => confetti.remove(), 1200);
+function findBest(board: Player[], player: Player): number | null {
+  const lines = [
+    [0, 1, 2], [3, 4, 5], [6, 7, 8],
+    [0, 3, 6], [1, 4, 7], [2, 5, 8],
+    [0, 4, 8], [2, 4, 6],
+  ];
+
+  for (const [a, b, c] of lines) {
+    const line = [board[a], board[b], board[c]];
+    if (
+      line.filter((v) => v === player).length === 2 &&
+      line.includes(null)
+    ) {
+      return [a, b, c][line.indexOf(null)];
+    }
+  }
+  return null;
 }
