@@ -1,0 +1,112 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@import "tailwindcss";
+
+:root {
+  --background: #ffffff;
+  --foreground: #171717;
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --font-sans: var(--font-geist-sans);
+  --font-mono: var(--font-geist-mono);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --background: #0a0a0a;
+    --foreground: #ededed;
+  }
+}
+
+body {
+  background: var(--background);
+  color: var(--foreground);
+  font-family: Arial, Helvetica, sans-serif;
+}
+html {
+  transition: background-color 0.3s ease, color 0.3s ease;
+}
+
+.light body {
+  background-color: #ffffff;
+  color: #111111;
+}
+
+.dark body {
+  background-color: #000000;
+  color: #ffffff;
+}
+/* ===== Ambient Mist / Glow Animation ===== */
+
+@keyframes mistFloatOne {
+  0% {
+    transform: translate(-10%, -10%) scale(1);
+    opacity: 0.45;
+  }
+  50% {
+    transform: translate(10%, 5%) scale(1.15);
+    opacity: 0.65;
+  }
+  100% {
+    transform: translate(-10%, -10%) scale(1);
+    opacity: 0.45;
+  }
+}
+
+@keyframes mistFloatTwo {
+  0% {
+    transform: translate(8%, 12%) scale(1.1);
+    opacity: 0.35;
+  }
+  50% {
+    transform: translate(-6%, -8%) scale(1.25);
+    opacity: 0.55;
+  }
+  100% {
+    transform: translate(8%, 12%) scale(1.1);
+    opacity: 0.35;
+  }
+}
+
+.mist-one {
+  animation: mistFloatOne 26s ease-in-out infinite;
+}
+
+.mist-two {
+  animation: mistFloatTwo 34s ease-in-out infinite;
+}
+/* ===== Journey Timeline (Dark/Light Safe) ===== */
+
+.journey-line {
+  position: absolute;
+  left: 7px;
+  top: 0;
+  height: 100%;
+  width: 2px;
+  background: rgba(0, 0, 0, 0.25);
+}
+
+.journey-dot {
+  position: absolute;
+  left: 0;
+  top: 8px;
+  width: 16px;
+  height: 16px;
+  border-radius: 9999px;
+  background: #000;
+}
+
+/* Dark mode override */
+html.dark .journey-line {
+  background: rgba(255, 255, 255, 0.7);
+}
+
+html.dark .journey-dot {
+  background: #fff;
+  box-shadow: 0 0 14px rgba(255, 255, 255, 0.9);
+}

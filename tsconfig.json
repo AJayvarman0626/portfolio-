@@ -29,6 +29,6 @@
     ".next/types/**/*.ts",
     ".next/dev/types/**/*.ts",
     "**/*.mts"
-  ],
+, "src/components/TicTacToe.tsx"  ],
   "exclude": ["node_modules"]
 }
