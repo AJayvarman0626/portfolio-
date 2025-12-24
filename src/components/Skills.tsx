@@ -51,7 +51,7 @@ export default function Skills() {
     },
   ];
 
-  /* Animations */
+  /* ===== Animations (TypeScript SAFE) ===== */
   const container = {
     hidden: {},
     show: {
@@ -66,7 +66,9 @@ export default function Skills() {
     show: {
       opacity: 1,
       y: 0,
-      transition: { duration: 0.6, ease: "easeOut" },
+      transition: {
+        duration: 0.6, // ❌ removed string ease
+      },
     },
   };
 
@@ -88,18 +90,17 @@ export default function Skills() {
         </h2>
 
         <p
-  className="
-    mx-auto mt-4 max-w-xl px-3 py-1
-    text-sm text-black/60 dark:text-white/55
-    bg-white/70 dark:bg-black/40
-    backdrop-blur-sm
-    rounded-md
-  "
->
-  Technologies and tools I use to build scalable, real-world applications —
-  not just demos.
-</p>
-
+          className="
+            mx-auto mt-4 max-w-xl px-3 py-1
+            text-sm text-black/60 dark:text-white/55
+            bg-white/70 dark:bg-black/40
+            backdrop-blur-sm
+            rounded-md
+          "
+        >
+          Technologies and tools I use to build scalable, real-world applications
+          — not just demos.
+        </p>
 
         <div className="mx-auto mt-4 h-[2px] w-14 rounded-full bg-black/40 dark:bg-white/70" />
       </div>
@@ -125,7 +126,7 @@ export default function Skills() {
               hover:shadow-[0_30px_80px_rgba(0,0,0,0.25)]
             "
           >
-            {/* Glow on hover */}
+            {/* Glow */}
             <div
               className="
                 pointer-events-none absolute inset-0 rounded-3xl
